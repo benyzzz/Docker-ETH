@@ -1,0 +1,49 @@
+version: '3.8'  # Cette ligne peut être supprimée (optionnel)
+services:
+  nginx:
+    image: nginx-custom
+    networks:
+      - MyBridgedNetwork
+    depends_on:
+      - mongo
+    ports:
+      - "80:80"
+
+  mongo:
+    image: mongo
+    networks:
+      - MyBridgedNetwork
+    volumes:
+      - bdd:/data/db
+
+  mongo-express:
+    image: mongo-express
+    networks:
+      - MyBridgedNetwork
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+    ports:
+      - "8081:8081"
+
+  eth-node:
+    build: ./eth-node  # Assure-toi que ce chemin est correct
+    networks:
+      - BCNetwork
+    volumes:
+      - blockchain:/eth-data
+
+networks:
+  MyBridgedNetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.1.1.0/24
+  BCNetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.2.2.0/24
+
+volumes:
+  bdd:
+  blockchain:
