@@ -1,0 +1,12 @@
+# Création des réseaux
+docker network create --subnet=172.1.1.0/24 MyBridgedNetwork
+docker network create --subnet=172.2.2.0/24 BCNetwork
+
+# Déploiement manuel des conteneurs ()
+docker run -d --name mongo-container --network MyBridgedNetwork -v bdd:/data/db mongo
+docker run -d --name mongo-express --network MyBridgedNetwork -e ME_CONFIG_MONGODB_SERVER=mongo -e ME_CONFIG_BASICAUTH_USERNAME=admin -e ME_CONFIG_BASICAUTH_PASSWORD=pass -p 8081:8081 mongo-express
+docker run -d --name nginx-container --network MyBridgedNetwork -p 8080:80 -v $(pwd)/index.html:/usr/share/nginx/html/index.html nginx
+docker run -d --name eth-node --network BCNetwork -v blockchain:/root/.ethereum ethereum/client-go:latest
+
+# Déploiement via Docker Compose
+docker-compose up -d

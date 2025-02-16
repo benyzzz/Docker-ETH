@@ -1,49 +1,66 @@
-version: '3.8'  # Cette ligne peut être supprimée (optionnel)
 services:
+  # Service Nginx
   nginx:
-    image: nginx-custom
+    image: nginx
+    container_name: nginx-container
+    ports:
+      - "8080:80"
+
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html  # Monte ta page HTML personnalisée
     networks:
       - MyBridgedNetwork
     depends_on:
-      - mongo
-    ports:
-      - "80:80"
+      - mongo  # Nginx ne démarre que si MongoDB est prêt
 
+  # Service MongoDB
   mongo:
     image: mongo
+    container_name: mongo-container
+    volumes:
+      - bdd:/data/db  # Volume pour la persistance des données MongoDB
     networks:
       - MyBridgedNetwork
-    volumes:
-      - bdd:/data/db
 
+  # Service Mongo-Express
   mongo-express:
     image: mongo-express
+    container_name: mongo-express
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo  # Connecte Mongo-Express à MongoDB
+      ME_CONFIG_BASICAUTH_USERNAME: admin  # Identifiant pour Mongo-Express
+      ME_CONFIG_BASICAUTH_PASSWORD: pass   # Mot de passe pour Mongo-Express
+    ports:
+      - "8081:8081"  # Expose le port 8081 pour accéder à Mongo-Express
+    depends_on:
+      - mongo  # Mongo-Express ne démarre que si MongoDB est prêt
     networks:
       - MyBridgedNetwork
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-    ports:
-      - "8081:8081"
 
+  # Service Noeud Ethereum (utilise le Dockerfile local)
   eth-node:
-    build: ./eth-node  # Assure-toi que ce chemin est correct
+    image: ethereum/client-go:latest  # Utilisation de l'image officielle
+    container_name: eth-node
+    volumes:
+      - blockchain:/root/.ethereum  # Volume pour persistance de la blockchain
     networks:
       - BCNetwork
-    volumes:
-      - blockchain:/eth-data
 
+
+# Définition des réseaux
 networks:
   MyBridgedNetwork:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.1.1.0/24
+        - subnet: 172.1.1.0/24  # Plage IP pour le réseau MyBridgedNetwork
   BCNetwork:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.2.2.0/24
+        - subnet: 192.168.100.0/24  # Plage IP pour le réseau BCNetwork
 
+# Définition des volumes
 volumes:
-  bdd:
-  blockchain:
+  bdd:  # Volume pour MongoDB
+  blockchain:  # Volume pour le noeud Ethereum
